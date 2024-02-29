@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Verstoppers - JachtSeizoen</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+
+    <script src="//cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.0/socket.io.js"></script>
+
+    <style>
+@font-face {
+    font-family: 'SprookjesBoom';
+    src: url(https://eftel.jbou.ws/static/SB.ttf);
+}
+
+html {
+    background-color: #292929; /* Achtergrondkleur */
+    min-height: 100%; /* Zorgt ervoor dat de html en body de volledige hoogte van het viewport innemen */
+}
+
+body {
+    margin: 0; /* Reset de standaardmarge */
+    min-height: 100%;
+    position: relative; /* Stelt de positioneringscontext in voor de z-index */
+    z-index: 2; /* Zorgt ervoor dat de body en zijn inhoud boven de pseudo-elementen staan */
+}
+
+body::before {
+    content: "";
+    position: fixed; /* Zorgt ervoor dat de afbeelding op de achtergrond blijft bij het scrollen */
+    left: 0;
+    top: 30px;
+    width: 100%;
+    height: 100%;
+    background-image: url('https://eftel.jbou.ws/static/SprookjesBoomhalf.png');
+    background-repeat: no-repeat;
+    background-position: left center;
+    background-size: cover;
+    z-index: -2; /* Lager dan de body, maar boven de default stacking context */
+}
+
+body::after {
+    content: "";
+    position: fixed; /* Zorgt ervoor dat de afbeelding op de achtergrond blijft bij het scrollen */
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-image: url('https://eftel.jbou.ws/static/logo.png');
+    background-repeat: no-repeat;
+    background-position: center center;
+    background-size: contain;
+    z-index: -1; /* Achter de ::before pseudo-element */
+    scale: 0.9;
+    filter: drop-shadow(5px 5px 10px #000000);
+}
+
+
+
+
+        #timer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            color: white;
+            text-align: center;
+            font-size: 5rem;
+            font-family: SprookjesBoom;
+            z-index: 2;
+            filter: drop-shadow(5px 5px 10px #000000);
+        }
+
+        #cameraPopup {
+        display: none;
+        position: fixed; /* Gebruik fixed om het volledige scherm te dekken */
+        top: 0;
+        left: 0;
+        width: 100vw; /* Volledige viewport breedte */
+        height: 100vh; /* Volledige viewport hoogte */
+        background-color: rgba(0,0,0,0.8); /* Semi-transparante achtergrond */
+        z-index: 10; /* Zorg ervoor dat dit boven andere inhoud staat */
+        justify-content: center;
+        align-items: center;
+        flex-direction: column;
+        display: flex;
+    }
+
+    #video {
+        /* Pas de grootte aan op basis van de behoefte, bijv. max-width voor responsiviteit */
+        max-width: 100%; /* Zorgt ervoor dat de video niet buiten het scherm valt */
+    }
+
+    #snap, [id^='btn-'] { /* Stijlen voor knoppen */
+        margin: 20px auto; /* Centreert de knoppen horizontaal */
+        display: block; /* Zorgt ervoor dat de knoppen op hun eigen regel staan */
+        background-color: #282828;
+        border: none;
+        color: white;
+        padding: 20px;
+        text-align: center;
+        text-decoration: none;
+        font-size: 16px;
+        border-radius: 100%;
+        background-color: rgba(0,0,0,0.8); /* Semi-transparante achtergrond */
+        border: 10px solid #3e3e3e;
+    }
+
+    .mirrored {
+    transform: scaleX(-1);
+}
+
+    </style>    
+</head>
+<body>
+    <div id="timer"></div>
+    <div id="cameraPopup" style="display:none;">
+        <video id="video" width="640" height="480" autoplay></video>
+        <button id="snap"></button>
+    </div>
+
+    <script>
+        var socket = io();
+
+        var audio = new Audio('static/notificatie.mp3');
+        var audio2 = new Audio('static/notificatie2.mp3');
+
+        document.addEventListener('DOMContentLoaded', function() {
+        setTimeout(function() {
+            fetch('/is_photo_uploaded').then(response => response.json()).then(data => {
+                // U kunt hier iets doen met het resultaat
+                console.log(data);
+            });
+            fetch('/is_location_uploaded').then(response => response.json()).then(data => {
+                // U kunt hier iets doen met het resultaat
+                console.log(data);
+            });
+        }, 2000); // Vertraging van 2000 milliseconden (2 seconden)
+    }, );
+
+        socket.on('game_stopped', function(data) {
+            location.reload();
+        });
+
+        socket.on('game_started', function(data) {
+            const startTime = new Date(data.start_time);
+            updateTimer(startTime);
+        });
+
+        socket.on('connect', function() {
+            socket.emit('request_start_time');
+        });
+
+        socket.on('game_start_time', function(data) {
+            const startTime = new Date(data.start_time);
+            updateTimer(startTime);
+        });
+
+        socket.on('trigger_event', function(data) {
+            if(data.event === 'picture') {
+                navigator.mediaDevices.getUserMedia({ video: true, audio: false })
+                .then(function(stream) {
+                    video.srcObject = stream;
+                    video.play();
+                    video.classList.add('mirrored'); // Voeg de mirrored class toe
+                    audio.play();
+                    document.getElementById('cameraPopup').style.display = 'block';
+                })
+                .catch(function(err) {
+                    console.log("An error occurred: " + err);
+                });
+            }
+            else if(data.event === 'location') {
+                if (navigator.geolocation) {
+                    audio2.play();
+                    navigator.geolocation.getCurrentPosition(sendLocationToServer, handleError);
+                } else {
+                    console.error("Geolocation is not supported by this browser.");
+                }
+            }
+        });
+
+        socket.on('foto_uploaded', function() {
+            var stream = video.srcObject;
+            var tracks = stream.getTracks();
+
+            tracks.forEach(function(track) {
+                track.stop();
+            });
+
+            video.srcObject = null;
+            closePopup(); // Sluit de popup
+        });
+
+        function updateTimer(startTime) {
+            const endTime = new Date(startTime.getTime() + 60*60*1000); // 1 uur toevoegen aan de starttijd
+            const interval = setInterval(function() {
+                const now = new Date();
+                const distance = endTime - now;
+                const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+                const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+                
+                document.getElementById('timer').innerHTML = minutes + "m " + seconds + "s ";
+                
+                if (distance < 0) {
+                    clearInterval(interval);
+                    document.getElementById('timer').innerHTML = "TIJD VOORBIJ";
+                }
+            }, 1000);
+        }
+
+        var video = document.getElementById('video');
+
+
+        // Foto maken en stream stoppen
+        document.getElementById('snap').addEventListener('click', function() {
+            var canvas = document.createElement('canvas');
+            canvas.width = 1080; // Gewenste uitvoerbreedte
+            canvas.height = 1920; // Gewenste uitvoerhoogte
+
+            // Verkrijg de video-feed's werkelijke afmetingen
+            var videoWidth = video.videoWidth;
+            var videoHeight = video.videoHeight;
+            
+            // Bereken de verhoudingen
+            var sourceX, sourceY, sourceWidth, sourceHeight;
+            var aspectRatioVideo = videoWidth / videoHeight;
+            var aspectRatioCanvas = canvas.width / canvas.height;
+
+            if (aspectRatioVideo > aspectRatioCanvas) {
+                // Video is breder dan canvas (landscape)
+                sourceHeight = videoHeight;
+                sourceWidth = sourceHeight * aspectRatioCanvas;
+                sourceX = (videoWidth - sourceWidth) / 2;
+                sourceY = 0;
+            } else {
+                // Video is hoger dan canvas (portrait)
+                sourceWidth = videoWidth;
+                sourceHeight = sourceWidth / aspectRatioCanvas;
+                sourceX = 0;
+                sourceY = (videoHeight - sourceHeight) / 2;
+            }
+
+            // Teken de video op het canvas
+            var ctx = canvas.getContext('2d');
+            ctx.drawImage(video, sourceX, sourceY, sourceWidth, sourceHeight, 0, 0, canvas.width, canvas.height);
+
+            // Hier kun je de canvas data versturen naar je server indien nodig
+            // Converteer canvas naar Blob
+            canvas.toBlob(function(blob) {
+                // Nu heb je een blob die je kunt uploaden
+                uploadImage(blob);
+            }, 'image/jpeg');
+            // Stop de video stream
+            var stream = video.srcObject;
+            var tracks = stream.getTracks();
+
+            tracks.forEach(function(track) {
+                track.stop();
+            });
+
+            video.srcObject = null;
+            closePopup(); // Sluit de popup
+        });
+
+        function uploadImage(blob) {
+            var formData = new FormData();
+            let date = new Date();
+            let dateTimeString = date.toISOString().replace(/:/g, '-');
+            let fileName = dateTimeString + '.jpg';
+            formData.append('file', blob, fileName); // Gebruik de datum-tijd string als de naam
+            fetch('/upload_image', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => {
+                if (response.ok) {
+                    console.log('Upload succesvol');
+                    closePopup();
+                } else {
+                    console.error('Upload mislukt');
+                }
+            })
+            .catch(err => console.error('Fout bij het uploaden:', err));
+        }
+
+
+        function closePopup() {
+            document.getElementById('cameraPopup').style.display = 'none';
+        }
+
+        function sendLocationToServer(position) {
+            const latitude = position.coords.latitude;
+            const longitude = position.coords.longitude;
+
+            // Hier kun je een AJAX-verzoek of Fetch API gebruiken om de locatie te verzenden
+            fetch('/send_location', {
+                method: 'POST', // of 'PUT'
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ latitude, longitude }),
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log('Success:', data);
+            })
+            .catch((error) => {
+                console.error('Error:', error);
+            });
+        }
+
+        function handleError(error) {
+            console.warn(`ERROR(${error.code}): ${error.message}`);
+        }
+</script>
+
+</body>
+</html>

@@ -1,0 +1,6 @@
+Flask
+Flask-SocketIO
+Flask-Uploads
+geopy
+python-dotenv
+Flask-Limiter

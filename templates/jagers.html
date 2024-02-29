@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Jagers - JachtSeizoen</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+
+    <script src="//cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.0/socket.io.js"></script>
+    <style>
+@font-face {
+    font-family: 'SprookjesBoom';
+    src: url(https://eftel.jbou.ws/static/SB.ttf);
+}
+
+html {
+    background-color: #292929; /* Achtergrondkleur */
+    min-height: 100%; /* Zorgt ervoor dat de html en body de volledige hoogte van het viewport innemen */
+}
+
+body {
+    margin: 0; /* Reset de standaardmarge */
+    min-height: 100%;
+    position: relative; /* Stelt de positioneringscontext in voor de z-index */
+    z-index: 2; /* Zorgt ervoor dat de body en zijn inhoud boven de pseudo-elementen staan */
+}
+
+body::before {
+    content: "";
+    position: fixed; /* Zorgt ervoor dat de afbeelding op de achtergrond blijft bij het scrollen */
+    left: 0;
+    top: 30px;
+    width: 100%;
+    height: 100%;
+    background-image: url('https://eftel.jbou.ws/static/SprookjesBoomhalf.png');
+    background-repeat: no-repeat;
+    background-position: left center;
+    background-size: cover;
+    z-index: -2; /* Lager dan de body, maar boven de default stacking context */
+}
+
+body::after {
+    content: "";
+    position: fixed; /* Zorgt ervoor dat de afbeelding op de achtergrond blijft bij het scrollen */
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-image: url('https://eftel.jbou.ws/static/logo.png');
+    background-repeat: no-repeat;
+    background-position: center center;
+    background-size: contain;
+    z-index: -1; /* Achter de ::before pseudo-element */
+    scale: 0.9;
+    filter: drop-shadow(5px 5px 10px #000000);
+}
+
+
+
+
+        #timer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            color: white;
+            text-align: center;
+            font-size: 5rem;
+            font-family: SprookjesBoom;
+            z-index: 2;
+            filter: drop-shadow(5px 5px 10px #000000);
+        }
+        #latestImage {
+            max-width: 100%;
+            max-height: 100vh;
+            position: absolute;
+            z-index: 1;
+        }
+        /* De Modal (achtergrond) */
+/* De Modal (achtergrond) */
+.modal {
+    display: none; /* Verborgen standaard */
+    position: fixed; /* Blijft op plaats bij scrollen */
+    z-index: 3; /* Ligt boven alles */
+    left: 0;
+    top: 0;
+    width: 100%; /* Volledige breedte */
+    height: 100%; /* Volledige hoogte */
+    overflow: auto; /* Enable scroll indien nodig */
+    background-color: rgb(0,0,0); /* Fallback kleur */
+    background-color: rgba(0,0,0,0.4); /* Zwart met opaciteit */
+    align-items: center; /* Centreer verticaal */
+    justify-content: center; /* Centreer horizontaal */
+}
+
+/* Modal Content (Afbeelding) */
+.modal-content {
+    margin: auto;
+    display: block;
+    max-width: 90%; /* Max breedte van de afbeelding */
+    max-height: 80vh; /* Max hoogte binnen viewport */
+}
+
+/* De Sluitknop */
+.close {
+    color: #aaa;
+    position: fixed; /* Maakt de positie ten opzichte van de modal */
+    top: 10px;
+    right: 25px;
+    font-size: 35px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.mirrored {
+    transform: scaleX(-1);
+}
+
+
+iframe#mapFrame {
+            width: 100vw; /* 100% van de viewport breedte */
+            height: 100vh; /* 100% van de viewport hoogte */
+            border: 0; /* Verwijdert de rand */
+            position: fixed; /* Maakt de positie ten opzichte van de viewport */
+            top: 0;
+            left: 0;
+        }
+
+    </style>
+    <script>
+        var socket = io();
+
+        document.addEventListener('DOMContentLoaded', function() {
+        fetch('/get_last_image').then(response => response.json()).then(data => {
+            if(data.filename) {
+                var modalImg = document.getElementById('modalImage');
+                var modal = document.getElementById('imageModal');
+                var imageUrl = '/uploads/' + data.filename;
+                if(imageUrl.trim() !== '/uploads/') { // Controleer of de imageUrl niet alleen '/uploads/' is
+                    modalImg.src = imageUrl;
+                    modal.style.display = "flex";
+                }
+            }
+
+                // Toevoegen van een verzoek om locatiegegevens op te halen
+    fetch('/get_location').then(response => response.json()).then(data => {
+        if(data.lat == 0) {
+            var mapFrame = document.getElementById('mapFrame'); // Zorg ervoor dat het iframe een id heeft, bijv. id="mapFrame"
+            mapFrame.style.display = "none";
+        } else {
+            var mapFrame = document.getElementById('mapFrame'); // Zorg ervoor dat het iframe een id heeft, bijv. id="mapFrame"
+            var newSrc = `https://maps.google.com/maps?q=${data.lat},${data.long}&hl=es;z=14&amp;t=k&output=embed`;
+            mapFrame.src = newSrc;
+            mapFrame.style.display = "block";
+        }
+    });
+    });
+
+        // Sluitknop
+        var span = document.getElementById('close-btn');
+        span.onclick = function() {
+            var modal = document.getElementById('imageModal');
+            modal.style.display = "none";
+        }
+    });
+
+        socket.on('image_uploaded', function(data) {
+            var imageUrl = '/uploads/' + data.filename;
+            if(imageUrl.trim() !== '/uploads/') { // Controleer of de imageUrl niet alleen '/uploads/' is
+                console.log('New image uploaded: ' + imageUrl);
+                var modalImg = document.getElementById('modalImage');
+                var modal = document.getElementById('imageModal');
+                modalImg.src = imageUrl;
+                modal.style.display = "flex";
+            }
+        });
+
+
+        socket.on('game_started', function(data) {
+            // Reset afbeelding bij start spel
+            const startTime = new Date(data.start_time);
+            updateTimer(startTime);
+        });
+
+        socket.on('game_stopped', function(data) {
+            location.reload();
+        });
+
+        socket.on('location_update', function() {
+            fetch('/get_location').then(response => response.json()).then(data => {
+        if(data.lat == 0) {
+            var mapFrame = document.getElementById('mapFrame'); // Zorg ervoor dat het iframe een id heeft, bijv. id="mapFrame"
+            mapFrame.style.display = "none";
+        } else {
+            var mapFrame = document.getElementById('mapFrame'); // Zorg ervoor dat het iframe een id heeft, bijv. id="mapFrame"
+            var newSrc = `https://maps.google.com/maps?q=${data.lat},${data.long}&hl=es;z=14&amp;t=k&output=embed`;
+            mapFrame.src = newSrc;
+            mapFrame.style.display = "block";
+        }
+    });
+        });
+
+        socket.on('connect', function() {
+            socket.emit('request_start_time');
+        });
+
+        socket.on('game_start_time', function(data) {
+            const startTime = new Date(data.start_time);
+            updateTimer(startTime);
+        });
+
+        function updateTimer(startTime) {
+            const endTime = new Date(startTime.getTime() + 60*60*1000); // 1 uur toevoegen aan de starttijd
+            const interval = setInterval(function() {
+                const now = new Date();
+                const distance = endTime - now;
+                const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+                const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+                
+                document.getElementById('timer').innerHTML = minutes + "m " + seconds + "s ";
+                
+                if (distance < 0) {
+                    clearInterval(interval);
+                    document.getElementById('timer').innerHTML = "TIJD VOORBIJ";
+                }
+            }, 1000);
+        }
+    </script>
+</head>
+<body>
+    <div id="timer"></div>
+    <!-- Aangepaste Modal voor de laatste afbeelding -->
+    <iframe id="mapFrame" src="" style="border:0; display: none;" allowfullscreen="" aria-hidden="false" tabindex="0"></iframe>
+
+    <div id="imageModal" class="modal">
+        <span id="close-btn" class="close">&times;</span>
+        <img id="modalImage" class="modal-content mirrored" src="" alt="Laatste Afbeelding">
+    </div>
+    </div>
+</body>
+</html>

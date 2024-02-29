@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Beheerder - JachtSeizoen</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <script src="//cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.0/socket.io.js"></script>
+    <style>
+@font-face {
+    font-family: 'SprookjesBoom';
+    src: url(https://eftel.jbou.ws/static/SB.ttf);
+}
+
+html {
+    background-color: #292929; /* Achtergrondkleur */
+    min-height: 100%; /* Zorgt ervoor dat de html en body de volledige hoogte van het viewport innemen */
+}
+
+body {
+    margin: 0; /* Reset de standaardmarge */
+    min-height: 100%;
+    position: relative; /* Stelt de positioneringscontext in voor de z-index */
+    z-index: 2; /* Zorgt ervoor dat de body en zijn inhoud boven de pseudo-elementen staan */
+}
+
+body::before {
+    content: "";
+    position: fixed; /* Zorgt ervoor dat de afbeelding op de achtergrond blijft bij het scrollen */
+    left: 0;
+    top: 30px;
+    width: 100%;
+    height: 100%;
+    background-image: url('https://eftel.jbou.ws/static/SprookjesBoomhalf.png');
+    background-repeat: no-repeat;
+    background-position: left center;
+    background-size: cover;
+    z-index: -2; /* Lager dan de body, maar boven de default stacking context */
+}
+
+body::after {
+    content: "";
+    position: fixed; /* Zorgt ervoor dat de afbeelding op de achtergrond blijft bij het scrollen */
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-image: url('https://eftel.jbou.ws/static/logo.png');
+    background-repeat: no-repeat;
+    background-position: center center;
+    background-size: contain;
+    z-index: -1; /* Achter de ::before pseudo-element */
+    scale: 0.9;
+    filter: drop-shadow(5px 5px 10px #000000);
+}
+    </style>
+</head>
+<body>
+    <form action="/start_game" method="post">
+        <button type="submit">Start Spel</button>
+    </form>
+    <form action="/force_location">
+        <button type="submit" id="FL">Fordce Location</button>
+    </form>
+    <form action="/force_picture">
+        <button type="submit" id="FP">Force Picture</button>
+    </form>
+    <form action="/stop_game" method="post">
+        <button type="submit">Stop Spel</button>
+    </form>
+</body>
+</html>
