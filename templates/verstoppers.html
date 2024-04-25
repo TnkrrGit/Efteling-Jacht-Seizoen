@@ -313,6 +313,27 @@ body::after {
         function handleError(error) {
             console.warn(`ERROR(${error.code}): ${error.message}`);
         }
+
+
+
+
+
+        // Functie om de pagina in volledig scherm te zetten
+function openFullscreen() {
+  if (document.documentElement.requestFullscreen) {
+    document.documentElement.requestFullscreen();
+  } else if (document.documentElement.mozRequestFullScreen) { /* Firefox */
+    document.documentElement.mozRequestFullScreen();
+  } else if (document.documentElement.webkitRequestFullscreen) { /* Chrome, Safari & Opera */
+    document.documentElement.webkitRequestFullscreen();
+  } else if (document.documentElement.msRequestFullscreen) { /* IE/Edge */
+    document.documentElement.msRequestFullscreen();
+  }
+}
+
+// Voeg een 'click' event listener toe aan de knop
+document.getElementById("fullscreenBtn").addEventListener('click', openFullscreen);
+
 </script>
 
 </body>

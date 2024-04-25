@@ -13,12 +13,72 @@ ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg'}
 
 events = {
     "1": {
-        "time": "2",
-        "event": "location"
+        "time": "5",
+        "event": "picture"
     },
     "2": {
-        "time": "1",
+        "time": "10",
+        "event": "location"
+    },
+    "3": {
+        "time": "10",
         "event": "picture"
+    },
+    "4": {
+        "time": "15",
+        "event": "picture"
+    },
+    "5": {
+        "time": "20",
+        "event": "location"
+    },
+    "6": {
+        "time": "20",
+        "event": "picture"
+    },
+    "7": {
+        "time": "25",
+        "event": "picture"
+    },
+    "8": {
+        "time": "30",
+        "event": "location"
+    },
+    "9": {
+        "time": "30",
+        "event": "picture"
+    },
+    "10": {
+        "time": "35",
+        "event": "picture"
+    },
+    "11": {
+        "time": "40",
+        "event": "location"
+    },
+    "12": {
+        "time": "40",
+        "event": "picture"
+    },
+    "13": {
+        "time": "45",
+        "event": "picture"
+    },
+    "14": {
+        "time": "50",
+        "event": "location"
+    },
+    "15": {
+        "time": "50",
+        "event": "picture"
+    },
+    "16": {
+        "time": "55",
+        "event": "picture"
+    },
+    "17": {
+        "time": "60",
+        "event": "location"
     }
 }
 
